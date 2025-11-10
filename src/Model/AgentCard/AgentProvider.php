@@ -12,11 +12,14 @@ class AgentProvider
     ) {
     }
 
+    /**
+     * @return array{organization: string, url: string}
+     */
     public function toArray(): array
     {
         return [
             'organization' => $this->organization,
-            'url' => $this->url,
+            'url'          => $this->url,
         ];
     }
 }

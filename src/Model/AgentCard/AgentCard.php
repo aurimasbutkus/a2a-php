@@ -4,52 +4,80 @@ declare(strict_types=1);
 
 namespace NeuronCore\A2A\Model\AgentCard;
 
+use NeuronCore\A2A\Enum\TransportProtocol;
+
 class AgentCard
 {
     /**
-     * @param array<AgentSkill> $skills
-     * @param array<AgentInterface> $additionalInterfaces
-     * @param array<string, mixed>|null $securitySchemes
+     * @param array<AgentSkill>                $skills
+     * @param array<AgentInterface>            $additionalInterfaces
+     * @param array<string, mixed>|null        $securitySchemes
      * @param array<array<string, mixed>>|null $security
-     * @param array<AgentExtension> $extensions
-     * @param array<AgentCardSignature> $signatures
+     * @param array<AgentCardSignature>        $signatures
+     * @param list<string>                     $defaultInputModes
+     * @param list<string>                     $defaultOutputModes
      */
     public function __construct(
-        public string $protocolVersion,
-        public string $name,
-        public string $description,
-        public string $url,
-        public string $preferredTransport,
-        public string $version,
-        public AgentProvider $provider,
-        public array $skills = [],
-        public array $additionalInterfaces = [],
-        public bool $streaming = false,
-        public bool $pushNotifications = false,
-        public bool $stateTransitionHistory = false,
-        public ?array $securitySchemes = null,
-        public ?array $security = null,
-        public array $extensions = [],
-        public array $signatures = [],
+        public string             $protocolVersion,
+        public string             $name,
+        public string             $description,
+        public string             $url,
+        public string             $version,
+        public AgentCapabilities  $capabilities,
+        public array              $skills = [],
+        public array              $defaultInputModes = [],
+        public array              $defaultOutputModes = [],
+        public ?TransportProtocol $preferredTransport = null,
+        public ?array             $additionalInterfaces = null,
+        public ?string            $iconUrl = null,
+        public ?AgentProvider     $provider = null,
+        public ?string            $documentationUrl = null,
+        public ?array             $securitySchemes = null,
+        public ?array             $security = null,
+        public ?bool              $supportsAuthenticatedExtendedCard = null,
+        public ?array             $signatures = null,
     ) {
     }
 
     public function toArray(): array
     {
         $data = [
-            'protocolVersion' => $this->protocolVersion,
-            'name' => $this->name,
-            'description' => $this->description,
-            'url' => $this->url,
-            'preferredTransport' => $this->preferredTransport,
-            'version' => $this->version,
-            'provider' => $this->provider->toArray(),
-            'skills' => \array_map(fn (AgentSkill $skill): array => $skill->toArray(), $this->skills),
-            'additionalInterfaces' => \array_map(fn (AgentInterface $interface): array => $interface->toArray(), $this->additionalInterfaces),
-            'streaming' => $this->streaming,
-            'pushNotifications' => $this->pushNotifications,
-            'stateTransitionHistory' => $this->stateTransitionHistory,
+            'protocolVersion'    => $this->protocolVersion,
+            'name'               => $this->name,
+            'description'        => $this->description,
+            'url'                => $this->url,
+            'version'            => $this->version,
+            'capabilities'       => $this->capabilities->toArray(),
+            'skills'             => array_map(
+                fn(AgentSkill $skill): array => $skill->toArray(),
+                $this->skills,
+            ),
+            'defaultInputModes'  => $this->defaultInputModes,
+            'defaultOutputModes' => $this->defaultOutputModes,
         ];
+
+        if ($this->preferredTransport !== null) {
+            $data['preferredTransport'] = $this->preferredTransport->value;
+        }
+
+        if ($this->additionalInterfaces !== null) {
+            $data['additionalInterfaces'] = array_map(
+                fn(AgentInterface $interface): array => $interface->toArray(),
+                $this->additionalInterfaces,
+            );
+        }
+
+        if ($this->iconUrl !== null) {
+            $data['iconUrl'] = $this->iconUrl;
+        }
+
+        if ($this->provider !== null) {
+            $data['provider'] = $this->provider->toArray();
+        }
+
+        if ($this->documentationUrl !== null) {
+            $data['documentationUrl'] = $this->documentationUrl;
+        }
 
         if ($this->securitySchemes !== null) {
             $data['securitySchemes'] = $this->securitySchemes;
@@ -59,12 +87,15 @@ class AgentCard
             $data['security'] = $this->security;
         }
 
-        if ($this->extensions !== []) {
-            $data['extensions'] = \array_map(fn (AgentExtension $ext): array => $ext->toArray(), $this->extensions);
+        if ($this->supportsAuthenticatedExtendedCard !== null) {
+            $data['supportsAuthenticatedExtendedCard'] = $this->supportsAuthenticatedExtendedCard;
         }
 
-        if ($this->signatures !== []) {
-            $data['signatures'] = \array_map(fn (AgentCardSignature $sig): array => $sig->toArray(), $this->signatures);
+        if ($this->signatures !== null) {
+            $data['signatures'] = array_map(
+                fn(AgentCardSignature $signature): array => $signature->toArray(),
+                $this->signatures,
+            );
         }
 
         return $data;

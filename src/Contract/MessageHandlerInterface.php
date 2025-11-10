@@ -9,8 +9,5 @@ use NeuronCore\A2A\Model\Task;
 
 interface MessageHandlerInterface
 {
-    /**
-     * @param array<Message> $messages
-     */
-    public function handle(Task $task, array $messages): Task;
+    public function handle(Task $task, Message $message): Task;
 }

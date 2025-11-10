@@ -4,20 +4,30 @@ declare(strict_types=1);
 
 namespace NeuronCore\A2A\Model\Part;
 
-class DataPart implements PartInterface
+use NeuronCore\A2A\Enum\Part;
+
+class DataPart extends BasePart
 {
+    /**
+     * @param array<string, mixed> $data
+     */
     public function __construct(
-        public mixed $data,
-        public string $mimeType = 'application/json',
+        public array $data,
+        ?array       $metadata = null,
     ) {
+        parent::__construct(
+            Part::DATA,
+            $metadata,
+        );
     }
 
     public function toArray(): array
     {
-        return [
-            'kind' => 'data',
-            'data' => $this->data,
-            'mimeType' => $this->mimeType,
-        ];
+        return array_merge(
+            parent::toArray(),
+            [
+                'data' => $this->data,
+            ],
+        );
     }
 }

@@ -4,18 +4,27 @@ declare(strict_types=1);
 
 namespace NeuronCore\A2A\Model\Part;
 
-class TextPart implements PartInterface
+use NeuronCore\A2A\Enum\Part;
+
+class TextPart extends BasePart
 {
     public function __construct(
         public string $text,
+        ?array        $metadata = null,
     ) {
+        parent::__construct(
+            Part::TEXT,
+            $metadata,
+        );
     }
 
     public function toArray(): array
     {
-        return [
-            'kind' => 'text',
-            'text' => $this->text,
-        ];
+        return array_merge(
+            parent::toArray(),
+            [
+                'text' => $this->text,
+            ],
+        );
     }
 }

@@ -5,21 +5,30 @@ declare(strict_types=1);
 namespace NeuronCore\A2A\Model;
 
 use NeuronCore\A2A\Enum\TaskState;
-use NeuronCore\A2A\Model\Part\PartInterface;
 
 class TaskStatus
 {
     public function __construct(
         public TaskState $state,
-        public PartInterface $message,
+        public ?Message  $message = null,
+        public ?string   $timestamp = null,
     ) {
     }
 
     public function toArray(): array
     {
-        return [
+        $data = [
             'state' => $this->state->value,
-            'message' => $this->message->toArray(),
         ];
+
+        if ($this->message !== null) {
+            $data['message'] = $this->message->toArray();
+        }
+
+        if ($this->timestamp !== null) {
+            $data['timestamp'] = $this->timestamp;
+        }
+
+        return $data;
     }
 }

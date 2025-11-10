@@ -16,6 +16,9 @@ class AgentCardSignature
     ) {
     }
 
+    /**
+     * @return array{protected: string, signature: string, header?: array<string, mixed>}
+     */
     public function toArray(): array
     {
         $data = [

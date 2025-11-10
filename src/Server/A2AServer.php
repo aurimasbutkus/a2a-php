@@ -6,11 +6,13 @@ namespace NeuronCore\A2A\Server;
 
 use NeuronCore\A2A\Contract\MessageHandlerInterface;
 use NeuronCore\A2A\Contract\TaskRepositoryInterface;
+use NeuronCore\A2A\Enum\Role;
 use NeuronCore\A2A\Enum\TaskState;
 use NeuronCore\A2A\JsonRpc\JsonRpcError;
 use NeuronCore\A2A\JsonRpc\JsonRpcRequest;
 use NeuronCore\A2A\JsonRpc\JsonRpcResponse;
 use NeuronCore\A2A\Model\AgentCard\AgentCard;
+use NeuronCore\A2A\Model\Message;
 use NeuronCore\A2A\Model\Part\TextPart;
 use NeuronCore\A2A\Model\Response\ListTasksResult;
 use NeuronCore\A2A\Model\Task;
@@ -41,27 +43,27 @@ abstract class A2AServer
     {
         try {
             $result = match ($request->method) {
-                'message/send' => $this->handleMessageSend($request->params),
-                'tasks/get' => $this->handleTasksGet($request->params),
-                'tasks/list' => $this->handleTasksList($request->params),
-                'tasks/cancel' => $this->handleTasksCancel($request->params),
+                'message/send'                       => $this->handleMessageSend($request->params),
+                'tasks/get'                          => $this->handleTasksGet($request->params),
+                'tasks/list'                         => $this->handleTasksList($request->params),
+                'tasks/cancel'                       => $this->handleTasksCancel($request->params),
                 'agent/getAuthenticatedExtendedCard' => $this->handleGetAgentCard(),
-                default => throw new \InvalidArgumentException("Method not found: {$request->method}"),
+                default                              => throw new \InvalidArgumentException("Method not found: {$request->method}"),
             };
 
             return new JsonRpcResponse(result: $result, id: $request->id);
         } catch (\InvalidArgumentException $e) {
             return new JsonRpcError(
-                code: -32601,
+                code   : -32601,
                 message: $e->getMessage(),
-                id: $request->id,
+                id     : $request->id,
             );
         } catch (\Throwable $e) {
             return new JsonRpcError(
-                code: -32603,
+                code   : -32603,
                 message: 'Internal error',
-                data: ['error' => $e->getMessage()],
-                id: $request->id,
+                data   : ['error' => $e->getMessage()],
+                id     : $request->id,
             );
         }
     }
@@ -70,19 +72,26 @@ abstract class A2AServer
     {
         $params = RequestParser::parseMessageSendParams($params);
 
-        $task = $params->taskId !== null
-            ? $this->getTaskRepository()->find($params->taskId)
-            : null;
+        $tasks = $this->getTaskRepository()
+            ->findAll(['contextId' => $params->message->contextId]);
+
+        $task = reset($tasks);
 
         if (!$task instanceof Task) {
             $task = new Task(
-                id: $this->getTaskRepository()->generateTaskId(),
+                id       : $this->getTaskRepository()->generateTaskId(),
                 contextId: $this->getTaskRepository()->generateContextId(),
-                status: new TaskStatus(
-                    state: TaskState::QUEUED,
-                    message: new TextPart('Task created'),
+                status   : new TaskStatus(
+                    state  : TaskState::SUBMITTED,
+                    message: new Message(
+                        role     : Role::AGENT,
+                        messageId: uniqid('message_', true),
+                        parts    : [
+                            new TextPart('Task created'),
+                        ],
+                    ),
                 ),
-                history: [],
+                history  : [],
             );
         }
 
@@ -90,7 +99,7 @@ abstract class A2AServer
             throw new \InvalidArgumentException('Task is in terminal state and cannot be modified');
         }
 
-        $task = $this->getMessageHandler()->handle($task, $params->messages);
+        $task = $this->getMessageHandler()->handle($task, $params->message);
         $this->getTaskRepository()->save($task);
 
         return $task->toArray();
@@ -98,7 +107,7 @@ abstract class A2AServer
 
     protected function handleTasksGet(mixed $params): array
     {
-        $params = (array) $params;
+        $params = (array)$params;
         $taskId = $params['taskId'] ?? throw new \InvalidArgumentException('taskId is required');
 
         $task = $this->getTaskRepository()->find($taskId);
@@ -129,7 +138,7 @@ abstract class A2AServer
 
     protected function handleTasksCancel(mixed $params): array
     {
-        $params = (array) $params;
+        $params = (array)$params;
         $taskId = $params['taskId'] ?? throw new \InvalidArgumentException('taskId is required');
 
         $task = $this->getTaskRepository()->find($taskId);
@@ -143,15 +152,15 @@ abstract class A2AServer
         }
 
         $task = new Task(
-            id: $task->id,
+            id       : $task->id,
             contextId: $task->contextId,
-            status: new TaskStatus(
-                state: TaskState::CANCELED,
+            status   : new TaskStatus(
+                state  : TaskState::CANCELED,
                 message: new TextPart('Task canceled by user'),
             ),
-            history: $task->history,
+            history  : $task->history,
             artifacts: $task->artifacts,
-            metadata: $task->metadata,
+            metadata : $task->metadata,
         );
 
         $this->getTaskRepository()->save($task);

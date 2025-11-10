@@ -4,22 +4,28 @@ declare(strict_types=1);
 
 namespace NeuronCore\A2A\Model\Part;
 
+use NeuronCore\A2A\Enum\Part;
 use NeuronCore\A2A\Model\File\FileInterface;
 
-class FilePart implements PartInterface
+class FilePart extends BasePart
 {
     public function __construct(
         public FileInterface $file,
-        public string $mimeType,
+        ?array               $metadata = null,
     ) {
+        parent::__construct(
+            Part::FILE,
+            $metadata,
+        );
     }
 
     public function toArray(): array
     {
-        return [
-            'kind' => 'file',
-            'file' => $this->file->toArray(),
-            'mimeType' => $this->mimeType,
-        ];
+        return array_merge(
+            parent::toArray(),
+            [
+                'file' => $this->file->toArray(),
+            ],
+        );
     }
 }

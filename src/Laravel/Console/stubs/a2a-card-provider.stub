@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace {{ namespace }};
 
+use NeuronCore\A2A\Enum\InputMode;
+use NeuronCore\A2A\Model\AgentCard\AgentCapabilities;
 use NeuronCore\A2A\Model\AgentCard\AgentCard;
 use NeuronCore\A2A\Model\AgentCard\AgentProvider;
 use NeuronCore\A2A\Model\AgentCard\AgentSkill;
@@ -33,6 +35,7 @@ class {{ class }}
                 organization: config('app.name'),
                 url: config('app.url'),
             ),
+            capabilities: new AgentCapabilities(),
             skills: [
                 new AgentSkill(
                     id: '{{ serverNameLower }}-skill',
@@ -49,9 +52,12 @@ class {{ class }}
                 ),
                 // Add more skills as needed
             ],
-            streaming: false,
-            pushNotifications: false,
-            stateTransitionHistory: false,
+            defaultInputModes: [
+                // Add supported input modes from \NeuronCore\A2A\InputMode
+            ],
+            defaultOutputModes: [
+                // Add supported input modes from \NeuronCore\A2A\InputMode
+            ],
         );
     }
 }
